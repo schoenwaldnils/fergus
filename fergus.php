@@ -8,6 +8,10 @@
  * License: MIT
  */
 
+fergus_init(wp_get_theme());
+
+add_filter( 'template_include', 'fergus_render_template', 1000 );
+
 /**
  * Initialize fergus
  */
@@ -51,21 +55,20 @@ function fergus_theme($existing, $type, $theme, $path) {
 /**
  * Render a HAML template
  */
-function fergus_render_template($template, $variables) {
+function fergus_render_template($template) {
 
   // Retrieve options for the Haml parser
   $options = _fergus_get_haml_options();
 
   // Evaluate where the cached version of the parsed haml template should be
-  $base_theme = basename($variables['directory']);
-  $base_theme = basename(WP_CONTENT_DIR . '/fergus/');
+  $base_theme = basename(WP_CONTENT_DIR . 'cache/fergus/');
   $template_cache = _fergus_cached_haml_path($template, $base_theme);
   $template_cache_fullpath = $template_cache['path'] . '/' . $template_cache['filename'];
 
   if ( !_fergus_cache_is_fresh($template_cache_fullpath, $template) ) {
 
     // Cached file doesn't exist or is old, generate a new file from haml template
-    if ( file_prepare_directory( $template_cache['path'], FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS ) ) {
+    if (wp_is_writable($template_cache['path'])) {
 
       $parser = new MtHaml\Environment('php', $options);
       $compiled = $parser->compileString(file_get_contents($template), $template );
@@ -75,9 +78,7 @@ function fergus_render_template($template, $variables) {
       fclose( $write_to_cache );
 
     } else {
-
-      drupal_set_message('Tried creating \'' . $template_cache['path'] . '\'. You must have your Drupal files directory correctly configured to use fergus.', 'error');
-
+      return new WP_Error('broke', 'Tried creating "' . $template_cache['path'] . '". You must have your Drupal files directory correctly configured to use fergus.');
     }
 
   }
@@ -137,7 +138,7 @@ function _fergus_init() {
     require_once $mthaml_autoloader;
     MtHaml\Autoloader::register();
   } else {
-    return new WP_Error('error', 'MtHaml library not found in "' . $mthaml_autoloader . '" folder. You can download an install a copy of it from its github project page: https://github.com/arnaud-lb/MtHaml');
+    return new WP_Error('broke', 'MtHaml library not found in "' . $mthaml_autoloader . '" folder. You can download an install a copy of it from its github project page: https://github.com/arnaud-lb/MtHaml');
   }
 }
 
@@ -147,14 +148,14 @@ function _fergus_init() {
 function _fergus_cached_haml_path($path, $base_theme) {
   $exploded_path = explode('/', $path);
   $base_theme_index = array_search($base_theme, $exploded_path);
+  return $exploded_path;
 
   if ($base_theme_index) {
     $template_source_path = array_slice($exploded_path, $base_theme_index, count($exploded_path) );
     $template_filename = array_pop($template_source_path);
     $cached_filename = str_replace(fergus_extension(), '.php', $template_filename);
   }
-
-  return array( 'path' => file_default_scheme() . '://fergus/' . implode('/', $template_source_path), 'filename' => $cached_filename );
+  return array( 'path' => implode('/', $template_source_path), 'filename' => $cached_filename );
 }
 
 /**
@@ -162,10 +163,8 @@ function _fergus_cached_haml_path($path, $base_theme) {
  */
 function _fergus_cache_is_fresh($cached_file, $source_file) {
   if (file_exists($cached_file) && file_exists($source_file)) {
-    if (drupal_realpath($cached_file) && drupal_realpath($source_file)) {
-      if (filemtime($cached_file) > filemtime($source_file)) {
-        return true;
-      }
+    if (filemtime($cached_file) > filemtime($source_file)) {
+      return true;
     }
   }
   return false;
@@ -211,6 +210,3 @@ function _fergus_set_haml_options($theme = array(), $options = array()) {
 
   return $set_options;
 }
-
-
-fergus_init(get_current_theme());
