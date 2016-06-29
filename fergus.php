@@ -8,7 +8,6 @@
  * License: MIT
  */
 
-
 /**
  * Initialize fergus
  */
@@ -37,7 +36,7 @@ function fergus_init($theme) {
  * The extension for our templates
  */
 function fergus_extension() {
-  return ".tpl.haml";
+  return ".haml";
 }
 
 /**
@@ -45,7 +44,7 @@ function fergus_extension() {
  */
 function fergus_theme($existing, $type, $theme, $path) {
   $templates = drupal_find_theme_functions($existing, array($theme));
-  $templates += drupal_find_theme_templates($existing, '.tpl.haml', $path);
+  $templates += drupal_find_theme_templates($existing, fergus_extension(), $path);
   return $templates;
 }
 
@@ -59,6 +58,7 @@ function fergus_render_template($template, $variables) {
 
   // Evaluate where the cached version of the parsed haml template should be
   $base_theme = basename($variables['directory']);
+  $base_theme = basename(WP_CONTENT_DIR . '/fergus/');
   $template_cache = _fergus_cached_haml_path($template, $base_theme);
   $template_cache_fullpath = $template_cache['path'] . '/' . $template_cache['filename'];
 
@@ -148,10 +148,10 @@ function _fergus_cached_haml_path($path, $base_theme) {
   $exploded_path = explode('/', $path);
   $base_theme_index = array_search($base_theme, $exploded_path);
 
-  if( $base_theme_index ){
+  if ($base_theme_index) {
     $template_source_path = array_slice($exploded_path, $base_theme_index, count($exploded_path) );
     $template_filename = array_pop($template_source_path);
-    $cached_filename = str_replace('.haml', '.php', $template_filename);
+    $cached_filename = str_replace(fergus_extension(), '.php', $template_filename);
   }
 
   return array( 'path' => file_default_scheme() . '://fergus/' . implode('/', $template_source_path), 'filename' => $cached_filename );
@@ -198,8 +198,6 @@ function _fergus_get_haml_options() {
  * Set options for the Haml parser.
  */
 function _fergus_set_haml_options($theme = array(), $options = array()) {
-  $set_options = &drupal_static(__FUNCTION__);
-
   // If no theme was passed in then return the options that have been set
   if (!empty($set_options)) {
     return $set_options;
@@ -208,8 +206,11 @@ function _fergus_set_haml_options($theme = array(), $options = array()) {
   // Merge options from theme's info file with the defaults
   $set_options = array_merge(_fergus_default_haml_options(), $options);
 
-  // Allow modules & running theme to alter Haml parser options
-  fergus_alter('haml_options', $set_options, $theme);
+  // // Allow modules & running theme to alter Haml parser options
+  // fergus_alter('haml_options', $set_options, $theme);
 
   return $set_options;
 }
+
+
+fergus_init(get_current_theme());
