@@ -16,8 +16,8 @@ function redirect_haml_to_php($template) {
   $haml_template = str_replace('.php', fergus_extension(), $template);
 
   if (file_exists($haml_template)) {
-    //trigger_error($haml_template);
-    fergus_render_template($haml_template);
+    trigger_error($haml_template);
+    return fergus_render_template($haml_template);
   } else {
     return $template;
   }
@@ -96,6 +96,11 @@ function fergus_render_template($template) {
   $template_cache_fullDirectory = fergus_folder() . $template_cache['path'];
   $template_cache_fullpath = $template_cache_fullDirectory . '/' . $template_cache['filename'];
 
+  if (!file_exists($template_cache_fullDirectory)) {
+    mkdir($template_cache_fullDirectory, 0777, true);
+  }
+
+
   // die(
   //   var_dump($template_cache) .
   //   var_dump($template_cache_fullpath)
@@ -113,9 +118,11 @@ function fergus_render_template($template) {
       //   var_dump($compiled)
       // );
 
-      $write_to_cache = fopen($template_cache_fullpath, 'w');
-      fwrite( $write_to_cache, $compiled );
-      fclose( $write_to_cache );
+      // $write_to_cache = fopen($template_cache_fullpath, 'w');
+      // fwrite( $write_to_cache, $compiled );
+      // fclose( $write_to_cache );
+
+      file_put_contents($template_cache_fullpath, $compiled, LOCK_EX);
 
     } else {
       trigger_error('Tried creating "' . $template_cache['path'] . '". You must have your WordPress files directory correctly configured to use fergus.');
@@ -126,13 +133,11 @@ function fergus_render_template($template) {
   // Extract Variables to a local namescape, needed for template rendering
   // extract($variables, EXTR_SKIP);
 
-  trigger_error($template_cache_fullpath);
-
-
-  // Render template
-  ob_start();
-  include($template_cache_fullpath);
-  return ob_get_clean();
+  // die(
+  //   var_dump($template_cache_fullpath)
+  // );
+  // return path to generated php file
+  return $template_cache_fullpath;
 }
 
 /**
