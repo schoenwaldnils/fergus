@@ -8,15 +8,20 @@
  * License: MIT
  */
 
-add_action( 'template_include', 'redirect_haml_to_php', 1000 );
+add_action( 'locate_template', 'testfunction');
+
+function testfunction($template_names) {
+  trigger_error('TEST: ' . $template_names);
+}
+
+add_action( 'template_include', 'redirect_haml_to_php');
 
 function redirect_haml_to_php($template) {
   //if (pathinfo($template, PATHINFO_EXTENSION) != 'haml') return $template;
-
   $haml_template = str_replace('.php', fergus_extension(), $template);
 
   if (file_exists($haml_template)) {
-    trigger_error($haml_template);
+    //trigger_error($haml_template);
     return fergus_render_template($haml_template);
   } else {
     return $template;
@@ -63,7 +68,7 @@ function fergus_extension() {
 }
 
 function fergus_folder() {
-  return WP_CONTENT_DIR . '/cache/fergus/';
+  return wp_normalize_path(WP_CONTENT_DIR . '/cache/fergus/');
 }
 
 /**
