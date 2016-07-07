@@ -10,36 +10,19 @@
 
 fergus_init();
 
-add_action( 'shutdown', 'fergus');
+add_action( 'template_include', 'fergus');
 
-function fergus() {
+function fergus($template) {
   $theme_name = get_option('template');
-  $files = get_included_files();
+  $php_template = _fergus_split_path($template, $theme_name);
+  $haml_template = _fergus_get_haml_temlplate($php_template);
+  $has_haml_template = _fergus_check_if_haml_exists($haml_template);
 
-  // die(
-  //   var_dump($files)
-  // );
-
-  $new_files = [];
-
-  foreach ($files as $template) {
-    if (strpos($template, get_template_directory()) !== false) {
-      $new_files[] = $template;
-      $php_template = _fergus_split_path($template, $theme_name);
-      $haml_template = _fergus_get_haml_temlplate($php_template);
-      $has_haml_template = _fergus_check_if_haml_exists($haml_template);
-
-      if ($has_haml_template) {
-        fergus_render_haml($haml_template, $php_template);
-      }
-    }
+  if ($has_haml_template) {
+    fergus_render_haml($haml_template, $php_template);
   }
 
-  // die(
-  //   var_dump($new_files)
-  // );
-
-  // return $template;
+  return $template;
 }
 
 /**
