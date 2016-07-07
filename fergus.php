@@ -16,11 +16,15 @@ function fergus() {
   $theme_name = get_option('template');
   $files = get_included_files();
 
-  // $new_files = [];
+  // die(
+  //   var_dump($files)
+  // );
+
+  $new_files = [];
 
   foreach ($files as $template) {
     if (strpos($template, get_template_directory()) !== false) {
-      // $new_files[] = $template;
+      $new_files[] = $template;
       $php_template = _fergus_split_path($template, $theme_name);
       $haml_template = _fergus_get_haml_temlplate($php_template);
       $has_haml_template = _fergus_check_if_haml_exists($haml_template);
